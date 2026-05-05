@@ -8,19 +8,26 @@ Backend API for SageLit — a public-domain classics English-learning app.
 - **Framework**: NestJS 11.x
 - **Language**: TypeScript 5.7 (strict)
 - **Database**: PostgreSQL 17
+- **ORM**: Prisma 6.x
 - **Cache**: Redis
 - **Storage**: Cloudflare R2 (S3-compatible)
 - **Auth**: Firebase Admin
-- **Validation**: class-validator + class-transformer
+- **Validation**: class-validator + class-transformer (DTOs); zod (env vars)
 
 ## Folder layout
 
 ```
+prisma/
+└── schema.prisma        # Prisma schema (User/Book/Passage/ProgressCard/Subscription/SelectedBook)
 src/
 ├── main.ts              # entry point
-├── app.module.ts        # root module
+├── app.module.ts        # root module — ConfigModule + ThrottlerModule + PrismaModule
 ├── common/              # filters, guards, interceptors, pipes
-├── config/              # env config + validation schema
+├── config/
+│   └── env.ts           # zod env-var validation
+├── prisma/
+│   ├── prisma.service.ts  # PrismaClient lifecycle (connect/disconnect)
+│   └── prisma.module.ts   # @Global module exporting PrismaService
 └── modules/
     ├── auth/            # Firebase ID token verification
     ├── users/           # user profile, curation mode
@@ -43,11 +50,25 @@ npm install
 cp .env.example .env
 
 # 3. Run Postgres + Redis (local dev)
-# (set DATABASE_URL and REDIS_URL in .env)
+#    set DATABASE_URL and REDIS_URL in .env
 
-# 4. Start dev server
+# 4. Generate Prisma client + run initial migration
+npm run prisma:generate
+npm run prisma:migrate:dev -- --name init
+
+# 5. Start dev server
 npm run start:dev
 ```
+
+### Prisma scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run prisma:generate` | Regenerate `@prisma/client` types after schema changes |
+| `npm run prisma:migrate:dev` | Create + apply a new migration locally |
+| `npm run prisma:migrate:deploy` | Apply migrations in production (no schema diff) |
+| `npm run prisma:studio` | Launch Prisma Studio GUI |
+| `npm run prisma:format` | Format `schema.prisma` |
 
 ## Security baseline
 
